@@ -1,0 +1,6 @@
+dist-newstyle/
+.pre-commit-config.yaml
+.envrc.local
+.vscode
+cabal.project.local
+result
