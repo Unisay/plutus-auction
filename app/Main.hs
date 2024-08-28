@@ -3,17 +3,14 @@ module Main where
 import Prelude
 
 import Auction.Blueprint qualified
-import Auction.Validator (AuctionParams (..))
-import Auction.Validator qualified
+import Auction.Validator (validatorEncoded)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
-import PlutusLedgerApi.V1.Value (lovelaceValue)
 
 main :: IO ()
 main = do
-  let validator = Auction.Validator.validatorEncoded auctionParams
-  writeCompiledValidatorToFile validator
-  writeBlueprintToFile validator
+  writeCompiledValidatorToFile validatorEncoded
+  writeBlueprintToFile validatorEncoded
 
 writeCompiledValidatorToFile :: ByteString -> IO ()
 writeCompiledValidatorToFile code = do
@@ -26,12 +23,3 @@ writeBlueprintToFile code = do
   let path = "validator/validator.json"
   putStrLn $ "Writing auction contract blueprint to " ++ path
   Auction.Blueprint.writeToFile path code
-
-auctionParams :: AuctionParams
-auctionParams =
-  AuctionParams
-    { apSeller = "A42366274383B5CEAC7CF9E1174DB43E"
-    , apAsset = lovelaceValue 1000000
-    , apMinBid = 100
-    , apEndTime = 1000
-    }

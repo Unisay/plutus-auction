@@ -19,7 +19,6 @@ import PlutusTx.Prelude
 import Data.ByteString (ByteString)
 import Data.ByteString.Short (fromShort)
 import GHC.Generics (Generic)
-import PlutusCore.Version (plcVersion100)
 import PlutusLedgerApi.V1.Address (pubKeyHashAddress)
 import PlutusLedgerApi.V1.Interval (contains)
 import PlutusLedgerApi.V1.Value (lovelaceValue)
@@ -216,10 +215,13 @@ auctionTypedValidator
             Nothing -> traceError "Not found: Output paid to highest bidder"
 
 {-# INLINEABLE auctionUntypedValidator #-}
-auctionUntypedValidator :: AuctionParams -> BuiltinData -> BuiltinUnit
-auctionUntypedValidator params scriptContextBuiltinData =
+auctionUntypedValidator :: BuiltinData -> BuiltinData -> BuiltinUnit
+auctionUntypedValidator paramsData scriptContextBuiltinData =
   check (auctionTypedValidator params datum redeemer scriptContext)
  where
+  params :: AuctionParams
+  params = unsafeFromBuiltinData paramsData
+
   (scriptContext, redeemer, datum) =
     case unsafeFromBuiltinData scriptContextBuiltinData of
       ctx@( ScriptContext
@@ -267,10 +269,8 @@ PlutusTx.asData
         )
     |]
 
-validatorCode :: AuctionParams -> CompiledCode (BuiltinData -> BuiltinUnit)
-validatorCode params =
-  $$(compile [||auctionUntypedValidator||])
-    `unsafeApplyCode` liftCode plcVersion100 params
+validatorCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinUnit)
+validatorCode = $$(compile [||auctionUntypedValidator||])
 
-validatorEncoded :: AuctionParams -> ByteString
-validatorEncoded = fromShort . serialiseCompiledCode . validatorCode
+validatorEncoded :: ByteString
+validatorEncoded = fromShort (serialiseCompiledCode validatorCode)
